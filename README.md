@@ -3,6 +3,8 @@
 ## WandB Report
 **https://api.wandb.ai/links/k-indian-institute-of-technology-madras/8n0x53jy**
 
+---
+
 A multi-task deep learning pipeline built on VGG11 for the Oxford-IIIT Pet dataset, covering:
 - **Task 1** — 37-class breed classification
 - **Task 2** — Single-object bounding box localization
