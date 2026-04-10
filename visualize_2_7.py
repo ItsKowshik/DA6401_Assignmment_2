@@ -55,9 +55,9 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 model = MultiTaskPerceptionModel(
     num_breeds=37,
     seg_classes=3,
-    classifier_path="checkpoints_perfect/classifier.pth",
-    localizer_path="checkpoints_perfect/localizer.pth",
-    unet_path="checkpoints_perfect/unet.pth",
+    classifier_path="checkpoints/classifier.pth",
+    localizer_path="checkpoints/localizer.pth",
+    unet_path="checkpoints/unet.pth",
 ).to(device)
 model.eval()
 

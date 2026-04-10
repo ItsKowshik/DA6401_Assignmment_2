@@ -17,9 +17,9 @@ class MultiTaskPerceptionModel(nn.Module):
 
     def __init__(
         self,
-        classifier_path: str = "checkpoints_perfect/classifier.pth",
-        localizer_path:  str = "checkpoints_perfect/localizer.pth",
-        unet_path:       str = "checkpoints_perfect/unet.pth",
+        classifier_path: str = "checkpoints/classifier.pth",
+        localizer_path:  str = "checkpoints/localizer.pth",
+        unet_path:       str = "checkpoints/unet.pth",
         num_breeds:      int = 37,
         seg_classes:     int = 3,
         in_channels:     int = 3,
@@ -27,10 +27,10 @@ class MultiTaskPerceptionModel(nn.Module):
     ):
 
         super().__init__()
-        #import gdown
-        #gdown.download(id="1D99fZYGGKiYf3UA-cZbzlNEu0VwLPZKQ", output=classifier_path, quiet=False)
-        #gdown.download(id="1193Rw7OdbA67Ao78JzK2FoIjCZvPFnq2",  output=localizer_path,  quiet=False)
-        #gdown.download(id="17OLC6FKd6S9OHhCWOa9QKLHt7YLxe3qK",       output=unet_path,       quiet=False)
+        import gdown
+        gdown.download(id="1D99fZYGGKiYf3UA-cZbzlNEu0VwLPZKQ", output=classifier_path, quiet=False)
+        gdown.download(id="1193Rw7OdbA67Ao78JzK2FoIjCZvPFnq2",  output=localizer_path,  quiet=False)
+        gdown.download(id="17OLC6FKd6S9OHhCWOa9QKLHt7YLxe3qK",       output=unet_path,       quiet=False)
         
         # type-safety guards — argparse can pass strings
         num_breeds  = int(num_breeds)

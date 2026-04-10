@@ -116,7 +116,7 @@ class VGG11UNet(nn.Module):
 
     def __init__(
         self,
-        encoder_ckpt:    str = "checkpoints_perfect/classifier.pth",
+        encoder_ckpt:    str = "checkpoints/classifier.pth",
         num_classes:     int = 3,
         freeze_mode:     str = "full",
         num_classes_cls: int = 37,
