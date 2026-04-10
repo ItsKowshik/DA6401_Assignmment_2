@@ -1,165 +1,290 @@
-# DA6401 Assignment-2 Skeleton Guide
+# DA6401 Assignment 2 — Multi-Task Pet Perception with VGG11
 
-This repository is an instructional skeleton for building the complete visual perception pipeline on Oxford-IIIT Pet.
+## WandB Report
+**https://api.wandb.ai/links/k-indian-institute-of-technology-madras/8n0x53jy**
 
+A multi-task deep learning pipeline built on VGG11 for the Oxford-IIIT Pet dataset, covering:
+- **Task 1** — 37-class breed classification
+- **Task 2** — Single-object bounding box localization
+- **Task 3** — Trimap segmentation (foreground / background / boundary)
+- **Task 4** — Unified multi-task model combining all three heads
 
-### ADDITIONAL INSTRUCTIONS FOR ASSIGNMENT2:
-- Ensure VGG11 is implemented according to the official paper(https://arxiv.org/abs/1409.1556). The only difference being injecting BatchNorm and CustomDropout layers is your design choice.
-- Train all the networks on normalized images as input (as the test set given by autograder will be normalized images).
-- The output of Localization model = [x_center, y_center, width, height] all these numbers are with respect to image coordinates, in pixel space (not normalized)
-- Train the object localization network with the following loss function: MSE + custom_IOU_loss.
-- Make sure the custom_IOU loss is in range: [0,1]
-- In the custom IOU loss, you have to implement all the two reduction types: ["mean", "sum"] and the default reduction type should be "mean". You may include any other reduction type as well, which will help your network learn better.
-- multitask.py shd load the saved checkpoints (classifier.pth, localizer.pth, unet.pth), initialize the shared backbone and heads with these trained weights and do prediction.
-- Keep paths as relative paths for loading in multitask.py
-- Assume input image size is fixed according to vgg11 paper(can be hardcoded need not pass as args)
-- Stick to the arguments of the functions and classes given in the github repo, if you include any additional arguments make sure they always have some default value.
-- Do not import any other python packages apart from the ones mentioned in assignment pdf, if you do so the autograder will instantly crash and your submission will not be evaluated.
-- The following classes will be used by autograder: 
-    ```
-        from models.vgg11 import VGG11
-        from models.layers import CustomDropout
-        from losses.iou_loss import IoULoss
-        from multitask import MultiTaskPerceptionModel
-    ```
-- The submission link for this assignment will be available by Saturday(04/04/2026) on gradescope
-
-
-
-
-
-### GENERAL INSTRUCTIONS:
-- From this assignment onwards, if we find any wandb report which is private/inaccessible while grading, there wont be any second chance, that submission will be marked 0 for wandb marks.
-- The entireity of plots presented in the wandb report should be interactive and logged in the wandb project. Any screenshot or images of plots will straightly be marked 0 for that question.
-- Gradescope offers an option to activate whichever submission you want to, and that submission will be used for evaluation. Under any circumstances, no requests to be raised to TAs to activate any of your prior submissions. It is the student's responsibility to do so(if required) before submission deadline.
-- Assignment2 discussion forum has been opened on moodle for any doubt clarification/discussion.   
-
-
-
-
-## Contact
-
-For questions or issues, please contact the teaching staff or post on the course forum.
+All experiments are tracked with [Weights & Biases](https://wandb.ai).
 
 ---
 
-Good luck with your implementation!
+## Table of Contents
+- [Project Structure](#project-structure)
+- [Dataset Setup](#dataset-setup)
+- [Environment Setup](#environment-setup)
+- [Training](#training)
+  - [Task 1 — Classification](#task-1--classification)
+  - [Task 2 — Localization](#task-2--localization)
+  - [Task 3 — Segmentation](#task-3--segmentation)
+  - [Task 4 — Multi-Task](#task-4--multi-task)
+- [Experiments (W&B)](#experiments-wb)
+- [Model Architecture](#model-architecture)
+- [Results](#results)
+- [File Reference](#file-reference)
+- [Common Errors & Fixes](#common-errors--fixes)
 
-Task 1
-python train.py   --root data/oxford-iiit-pet   --experiment standard   --run_name classifier_with_bn   --epochs 80   --lr 0.01   --weight_decay 1e-3   --val_fraction 0.05  --batch_size 32
+---
 
+## Project Structure
+```text
+A2/
+├── data/
+│ └── oxford-iiit-pet/
+│ ├── images/ # .jpg pet images
+│ ├── annotations/
+│ │ ├── list.txt # image stems + class labels
+│ │ ├── trimaps/ # .png trimap masks (values 1/2/3)
+│ │ └── xmls/ # .xml bounding box annotations
+├── models/
+│ ├── vgg11.py # VGG11Encoder backbone
+│ ├── classification.py # VGG11Classifier head
+│ ├── localization.py # VGG11Localizer regression head
+│ ├── segmentation.py # VGG11UNet decoder
+│ ├── multitask.py # MultiTaskPerceptionModel (all heads)
+│ └── layers.py # CustomDropout
+├── data/
+│ └── pets_dataset.py # OxfordIIITPetDataset + dataloaders
+├── losses/
+│ ├── iou_loss.py # IoULoss
+│ └── segmentation_loss.py # CE + Dice combined loss
+├── checkpoints/ # Saved model weights (auto-created)
+├── train_classification.py # Task 1 training script
+├── train_localization.py # Task 2 training script
+├── train_segmentation.py # Task 3 training script
+├── train.py # Unified script for all tasks
+├── visualize_2_1.sh #All WandB experiments
+├── visualize_2_2.sh
+├── visualize_2_3.sh
+├── visualize_2_4.py
+├── visualize_2_5.py
+├── visualize_2_6.py
+├── visualize_2_7.py
+└── README.md
+```
+---
 
+## Dataset Setup
 
-python visualize_2_4.py   --root data/oxford-iiit-pet   --checkpoint checkpoints/classifier.pth   --max_channels 16
+Download the [Oxford-IIIT Pet Dataset](https://www.robots.ox.ac.uk/~vgg/data/pets/):
 
-Task 2
-python train_localization.py   --root data/oxford-iiit-pet   --run_name localizer_finetune   --epochs 30   --batch_size 32   --lr 1e-4 --val_fraction 0.05
+```bash
+mkdir -p data/oxford-iiit-pet
+cd data/oxford-iiit-pet
 
-python train_localization.py   --root data/oxford-iiit-pet   --freeze_encoder   --run_name localizer_frozen   --epochs 30   --batch_size 32   --lr 1e-3 --val_fraction 0.05
+# Images
+wget https://www.robots.ox.ac.uk/~vgg/data/pets/data/images.tar.gz
+tar -xf images.tar.gz
 
-python visualize_2_5.py \
-    --root data/oxford-iiit-pet \
-    --localizer_ckpt checkpoints/localizer.pth \
-    --n_samples 20
+# Annotations (masks + xmls + list.txt)
+wget https://www.robots.ox.ac.uk/~vgg/data/pets/data/annotations.tar.gz
+tar -xf annotations.tar.gz
 
-Task 3
-# Run 1 — Frozen encoder
+cd ../..
+```
+
+Expected layour afer extraction
+
+```text
+data/oxford-iiit-pet/
+├── images/          # ~7000 .jpg files
+└── annotations/
+    ├── list.txt
+    ├── trimaps/     # ~7000 .png files
+    └── xmls/        # ~3600 .xml files
+```
+
+---
+## Environment Setup
+
+```bash
+# Create and activate conda environment
+conda create -n da6401-a2 python=3.11
+conda activate da6401-a2
+
+# Install PyTorch (CUDA 12.x)
+pip install torch torchvision --index-url https://download.pytorch.org/whl/cu121
+
+# Install remaining dependencies
+pip install wandb albumentations scikit-learn scipy numpy Pillow
+
+# Login to W&B
+wandb login
+```
+---
+
+## Training
+#### Task 1 Classification
+
+```python
+python train_classification.py \
+  --root data/oxford-iiit-pet \
+  --epochs 30 \
+  --batch_size 32 \
+  --lr 0.01 \
+  --optimizer sgd \
+  --dropout_p 0.5 \
+  --run_name Standard_Run
+```
+#### Section 2.1 BatchNorm Effect
+
+```python
+# With BN (default)
+python train_classification.py --root data/oxford-iiit-pet --experiment bn_effect --run_name cls_bn
+
+# Without BN
+python train_classification.py --root data/oxford-iiit-pet --experiment bn_effect --no_bn --run_name cls_nobn
+
+```
+#### Section 2.2 Dropout Effect
+
+```python
+python train_classification.py --root data/oxford-iiit-pet --experiment dropout_effect --dropout_p 0.0 --run_name cls_nodropout
+python train_classification.py --root data/oxford-iiit-pet --experiment dropout_effect --dropout_p 0.2 --run_name cls_dropout0.2
+python train_classification.py --root data/oxford-iiit-pet --experiment dropout_effect --dropout_p 0.5 --run_name cls_dropout0.5
+
+```
+
+### Task 2 Localization
+#### Training
+Fine-tune full network (recommended):
+
+```python
+python train_localization.py \
+  --root data/oxford-iiit-pet \
+  --encoder_ckpt checkpoints/classifier.pth \
+  --epochs 30 \
+  --lr 0.001 \
+  --batch_size 32
+```
+Frozen encoder (feature extractor only):
+
+```python
+python train_localization.py \
+  --root data/oxford-iiit-pet \
+  --encoder_ckpt checkpoints/classifier.pth \
+  --epochs 30 \
+  --lr 0.001 \
+  --freeze_encoder \
+  --batch_size 32
+
+```
+### Task 3 — Segmentation
+#### Training
+```python
 python train_segmentation.py \
-    --root data/oxford-iiit-pet \
-    --freeze_mode frozen \
-    --run_name seg_frozen \
-    --lr 1e-3 \
-    --epochs 30
+  --root data/oxford-iiit-pet \
+  --encoder_ckpt checkpoints/classifier.pth \
+  --epochs 30 \
+  --lr 0.001 \
+  --batch_size 32
+```
+#### Multiple Strategies Training
+```python
+python train_segmentation.py --root data/oxford-iiit-pet --epochs 30 --batch_size 32 --lr 0.01 --encoder_ckpt checkpoints_perfect/classifier.pth --freeze_mode frozen --run_name "Seg_Strict_Frozen" --val_frac 0.05
+python train_segmentation.py --root data/oxford-iiit-pet --epochs 30 --batch_size 32 --lr 0.01 --encoder_ckpt checkpoints_perfect/classifier.pth --freeze_mode partial --run_name "Seg_Partial_Finetune" --val_frac 0.05
+python train_segmentation.py --root data/oxford-iiit-pet --epochs 30 --batch_size 32 --lr 0.01 --encoder_ckpt checkpoints_perfect/classifier.pth --freeze_mode full --run_name "Full_Finetune" --val_frac 0.05
+```
+### Task 4 - Multitask
+```bash
+python train.py
+```
 
-# Run 2 — Partial fine-tune (after run 1 finishes)
-python train_segmentation.py \
-    --root data/oxford-iiit-pet \
-    --freeze_mode partial \
-    --run_name seg_partial \
-    --lr 1e-4 \
-    --epochs 30
+---
 
-# Run 3 — Full fine-tune (after run 2 finishes)
-python train_segmentation.py \
-    --root data/oxford-iiit-pet \
-    --freeze_mode full \
-    --run_name seg_finetune \
-    --lr 1e-4 \
-    --epochs 30
+## WandB Experiments
+```bash
+./viusalize_2_1.sh
+./visualize_2_2.sh
+./visualize_2_3.sh
+```
+```python
+python visualize_2_4.py
+python visualize_2_5.py
+python visualize_2_6.py
+python visualize_2_7.py
+```
 
+---
+## Model Architecture
 
+### VGG11 Encoder (Shared Backbone)
+- 5 convolutional blocks with MaxPool  
+- BatchNorm after each `Conv2d`  
+- CustomDropout for regularization  
+- **Output:** `[B, 512, 7, 7]` feature map  
 
-Task 1 — VGG11 Classification
-bash
-# Train (3 dropout experiments for section 2.2)
-python classifier.py --group "task1-classification" --run_name "cls-no-dropout"    --dropout 0.0
-python classifier.py --group "task1-classification" --run_name "cls-dropout-0.2"  --dropout 0.2
-python classifier.py --group "task1-classification" --run_name "cls-dropout-0.5"  --dropout 0.5
+### Classification Head (Task 1)
+```
+Flatten  
+→ Linear(25088, 4096) → BatchNorm → ReLU → Dropout  
+→ Linear(4096, 4096) → BatchNorm → ReLU → Dropout  
+→ Linear(4096, 37)
+```
+- **Output:** 37 breed classes  
 
-# Sanity check
-python models/classification.py
-Task 2 — Object Localization
-bash
-# Train (frozen vs fine-tune for section 2.3 reference)
-python localizer.py --group "task2-localization" --run_name "loc-frozen"   --freeze_encoder
-python localizer.py --group "task2-localization" --run_name "loc-finetune" --no-freeze_encoder
+###  Localization Head (Task 2)
+```
+AdaptiveAvgPool2d(4,4)  
+→ Flatten  
+→ Linear(8192, 1024) → ReLU → Dropout  
+→ Linear(1024, 256) → ReLU → Dropout  
+→ Linear(256, 4) → Sigmoid
+```
+- **Output:** `[B, 4]` → normalized `(cx, cy, w, h)` in `[0, 1]`  
 
-# Sanity check
-python models/localization.py
-Task 3 — U-Net Segmentation
-bash
-# Train 3 freeze modes (section 2.3)
-python segmenter.py --group "task3-segmentation" --run_name "seg-frozen"  --freeze_mode frozen
-python segmenter.py --group "task3-segmentation" --run_name "seg-partial" --freeze_mode partial
-python segmenter.py --group "task3-segmentation" --run_name "seg-full"    --freeze_mode full
+### Segmentation Head — U-Net Decoder (Task 3)
+- 5 transposed convolution upsampling blocks  
+- Skip connections from encoder  
+- **Output:** `[B, 3, H, W]` logits for 3-class trimap  
 
-# Copy best checkpoint for Task 4
-cp checkpoints/segmenter_full.pth checkpoints/unet.pth
+###  Multi-Task Model (Task 4)
+- Shared encoder for **classification + segmentation**  
+- Separate localization encoder (independent copy)  
+- All three heads run in a **single forward pass**
 
-# Sanity check
-python models/segmentation.py
-Task 4 — Multi-Task Pipeline
-bash
-# Sanity check model only
-python models/multitask.py
+---
 
-# Train run 1 (balanced lambdas)
-python multitask.py \
-    --group "task4-multitask" --run_name "multitask-lam1-1-1" \
-    --lambda_cls 1.0 --lambda_loc 1.0 --lambda_seg 1.0
+## Common Errors & Fixes
 
-# Train run 2 (loc-heavy)
-python multitask.py \
-    --group "task4-multitask" --run_name "multitask-lam1-2-1" \
-    --lambda_cls 1.0 --lambda_loc 2.0 --lambda_seg 1.0
-W&B Report Scripts
-bash
-# Section 2.5 — BBox prediction table
-python report_2_5.py
+### CUBLAS_STATUS_ALLOC_FAILED
+GPU out of memory. Reduce batch size:
 
-# Section 2.6 — Segmentation sample images
-python report_2_6.py
+```bash
+# Add to your command
+--batch_size 16
+```
 
-# Section 2.7 — Novel images pipeline showcase
-python report_2_7.py
-Checkpoint Verification
-bash
-# Verify all checkpoints exist and are non-empty
-ls -lh checkpoints/classifier.pth \
-        checkpoints/localizer.pth  \
-        checkpoints/unet.pth       \
-        checkpoints/multitask_best.pth
+Or add this at the top of your script:
 
-# Inspect any checkpoint metadata
-python -c "
-import torch
-for f in ['classifier','localizer','unet','multitask_best']:
-    ckpt = torch.load(f'checkpoints/{f}.pth', map_location='cpu')
-    print(f, {k:v for k,v in ckpt.items() if k!='state_dict' and k!='optimizer'})
-"
-Quick Sanity — All Models
-bash
-python models/classification.py
-python models/localization.py
-python models/segmentation.py
-python models/multitask.py
+```python
+import os
+os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "expandable_segments:True"
+```
+
+### W&B step warning (step is less than current step)
+Caused by mixing explicit `step=` in per-batch logs with auto-step in per-epoch logs.
+
+Fix per-batch logging:
+
+```python
+wandb.log({"train/batch_loss": loss.item()}, commit=False)
+```
+
+### IoU = 0.00 during localization training
+The model outputs normalized `[0,1]` boxes but the dataset returned pixel-space `[0,224]` boxes.
+
+Ensure `pets_dataset.py` normalizes bounding boxes:
+
+```python
+bbox_tensor = bbox_tensor / float(IMAGE_SIZE)  # normalize to [0, 1]
+```
+### train_localization.py --freeze_encoder gives loss ~48, IoU ~0.00
+The frozen classification encoder has no spatial sensitivity for localization.
+
+Use full fine-tuning (remove `--freeze_encoder`). This is expected behavior.
+

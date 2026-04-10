@@ -19,6 +19,16 @@ IMAGENET_STD = (0.229, 0.224, 0.225)
 
 
 def get_transforms(split: str) -> A.Compose:
+    """
+    Get data augmentation transforms for the given split.
+    For training, we apply a variety of augmentations to improve generalization.
+    For validation and testing, we only resize and normalize the images.
+
+    Args:
+        split (str): One of "train", "val", or "test".
+    Returns:
+        A.Compose: An albumentations Compose object with the appropriate transforms.
+    """
     if split == "train":
         return A.Compose(
             [
@@ -64,6 +74,16 @@ def get_transforms(split: str) -> A.Compose:
 
 
 def _load_bbox_xml(xml_path: str) -> Optional[List[float]]:
+    """
+    Load bounding box from the given XML file in COCO format.
+    If the file does not exist, is malformed, or does not contain a valid bounding box, return None.
+    Args:
+        xml_path (str): Path to the XML file containing bounding box annotations.
+    Returns:
+        Optional[List[float]]: A list [xc, yc, w, h] representing the bounding box in COCO format,
+        or None if the bounding box cannot be loaded.
+
+    """
     if not os.path.exists(xml_path):
         return None
     try:
@@ -94,6 +114,9 @@ def _load_bbox_xml(xml_path: str) -> Optional[List[float]]:
 
 
 class OxfordIIITPetDataset(Dataset):
+    """
+    PyTorch Dataset for the Oxford-IIIT Pet multi-task dataset.
+    """
     def __init__(
         self,
         root: str,
@@ -243,6 +266,20 @@ def get_dataloaders(
     val_fraction: float = 0.1,
     seed: int = 42,
 ) -> Dict[str, DataLoader]:
+    """
+    Create PyTorch DataLoaders for the Oxford-IIIT Pet multi-task dataset.
+    This function initializes the OxfordIIITPetDataset for each split (train, val, test
+) and creates corresponding DataLoaders.
+    Args:
+        root (str): Root directory of the dataset.
+        batch_size (int): Batch size for the DataLoaders.
+        num_workers (int): Number of worker processes for data loading.
+        val_fraction (float): Fraction of training data to use for validation.
+        seed (int): Random seed for reproducibility when splitting train/val.
+
+    Returns:
+        Dict[str, DataLoader]: A dictionary containing DataLoaders for "train", "val", and "test" splits.
+    """
     datasets = {
         split: OxfordIIITPetDataset(
             root=root,

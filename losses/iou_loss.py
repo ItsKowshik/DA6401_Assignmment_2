@@ -144,4 +144,4 @@ if __name__ == "__main__":
     loss = criterion(pred, gt).item()
     print(f"✓ Zero-area box → loss = {loss:.4f} (no crash)")
 
-    print("\nAll tests passed ✅")
+    print("\nAll tests passed")

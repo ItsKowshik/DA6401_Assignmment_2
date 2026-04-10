@@ -12,3 +12,5 @@
 /outputs
 /.vscode
 /*.zip
+losses/__pycache__
+models/__pycache__

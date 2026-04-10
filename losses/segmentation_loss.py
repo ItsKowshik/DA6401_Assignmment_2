@@ -144,10 +144,6 @@ def pixel_accuracy(logits: torch.Tensor, targets: torch.Tensor) -> float:
     """
     Overall pixel accuracy = correct_pixels / total_pixels.
 
-    NOTE: This metric is deliberately kept separate from the loss so that
-    Section 2.6 can show how pixel accuracy is artificially inflated
-    compared to Dice score in class-imbalanced settings.
-
     Args:
         logits : (N, C, H, W)
         targets: (N, H, W) long
@@ -193,7 +189,7 @@ if __name__ == "__main__":
     logits[:, 0, :, :] = 10.0   # force class 0 everywhere
     loss, ce, dice = criterion(logits, targets, return_components=True)
     assert dice.item() < 0.01, "FAIL: perfect pred dice should be near 0"
-    print(f"✓ Perfect prediction → dice={dice.item():.4f}, ce={ce.item():.4f}")
+    print(f"Perfect prediction → dice={dice.item():.4f}, ce={ce.item():.4f}")
 
     # Test 2: Random prediction → loss > 0, gradient flows
     logits  = torch.randn(2, 3, 224, 224, requires_grad=True)
@@ -201,7 +197,7 @@ if __name__ == "__main__":
     loss    = criterion(logits, targets)
     loss.backward()
     assert logits.grad is not None, "FAIL: no gradient"
-    print(f"✓ Random prediction → loss={loss.item():.4f}, gradient flows")
+    print(f"Random prediction → loss={loss.item():.4f}, gradient flows")
 
     # Test 3: pixel_accuracy and dice_score helpers
     logits  = torch.randn(2, 3, 64, 64)
@@ -210,17 +206,17 @@ if __name__ == "__main__":
     ds  = dice_score(logits, targets)
     assert 0 <= pa <= 1, "FAIL: pixel_accuracy out of range"
     assert 0 <= ds <= 1, "FAIL: dice_score out of range"
-    print(f"✓ Helpers → pixel_accuracy={pa:.4f}, dice_score={ds:.4f}")
+    print(f"Helpers → pixel_accuracy={pa:.4f}, dice_score={ds:.4f}")
 
     # Test 4: Class imbalance demo (why dice > pixel accuracy matters)
     # 95% background, 5% foreground
     logits  = torch.zeros(1, 3, 224, 224)
     logits[:, 1, :, :] = 10.0   # predict background everywhere
     targets = torch.ones(1, 224, 224, dtype=torch.long)
-    targets[:, :11, :] = 0      # ~5% foreground
+    targets[:, :11, :] = 0      
     pa = pixel_accuracy(logits, targets)
     ds = dice_score(logits, targets)
-    print(f"✓ Imbalance demo → pixel_accuracy={pa:.4f} (inflated), dice={ds:.4f} (honest)")
+    print(f"Imbalance demo → pixel_accuracy={pa:.4f} (inflated), dice={ds:.4f} (honest)")
     assert pa > ds, "FAIL: expected pixel_acc > dice for imbalanced case"
 
-    print("\nAll tests passed ✅")
+    print("\nAll tests passed")
