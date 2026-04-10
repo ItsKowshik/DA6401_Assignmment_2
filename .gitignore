@@ -1,0 +1,14 @@
+*.zip
+/wandb
+/checkpoints_perfect
+/__pycache__
+*.log
+*.pt
+*.pth
+*.ckpt
+/data/__pycache__
+/data/*.zip
+/data/oxford-iiit-pet
+/outputs
+/.vscode
+/*.zip

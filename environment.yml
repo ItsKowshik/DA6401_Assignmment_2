@@ -1,0 +1,41 @@
+name: da6401-a2
+
+channels:
+  - pytorch
+  - nvidia
+  - conda-forge
+  - defaults
+
+dependencies:
+  # ── Python ───────────────────────────────────────────────────────────────
+  - python=3.10
+
+  # ── PyTorch (CUDA 12.1 — change to cuda=11.8 if your driver is older) ──
+  - pytorch>=2.1.0
+  - torchvision>=0.16.0
+  - torchaudio>=2.1.0
+  - pytorch-cuda=12.1
+
+  # ── System-level (best installed via conda, not pip) ─────────────────────
+  - numpy>=1.24.0
+  - pillow>=9.5.0
+  - opencv>=4.8.0
+
+  # ── pip-installed packages ────────────────────────────────────────────────
+  - pip
+  - pip:
+      # ── Assignment PDF permitted libraries ─────────────────────────────
+      - matplotlib>=3.7.0
+      - albumentations>=1.3.1
+      - wandb>=0.16.0
+      - scikit-learn>=1.3.0
+
+      # ── Training utilities (not imported in submitted model files) ──────
+      - tqdm>=4.66.0
+      - ipykernel>=6.25.0
+      - ipywidgets>=8.1.0
+      - rich>=13.0.0
+
+      # ── Image/data utilities ────────────────────────────────────────────
+      - requests>=2.31.0
+      - scipy>=1.11.0

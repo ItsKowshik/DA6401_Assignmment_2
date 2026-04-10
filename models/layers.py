@@ -1,32 +1,27 @@
 """Reusable custom layers 
 """
-
 import torch
 import torch.nn as nn
 
 
 class CustomDropout(nn.Module):
-    """Custom Dropout layer.
+    """
+    Inverted dropout — scales surviving activations by 1/(1-p) at train time
+    so eval mode is a pure identity (no rescaling needed).
+    nn.Dropout and F.dropout are NOT used anywhere.
     """
 
     def __init__(self, p: float = 0.5):
-        """
-        Initialize the CustomDropout layer.
-
-        Args:
-            p: Dropout probability.
-        """
-        pass
+        super().__init__()
+        if not (0.0 <= p < 1.0):
+            raise ValueError(f"p must be in [0, 1), got {p}")
+        self.p = p
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        """
-        Forward pass for the CustomDropout layer.
+        if not self.training or self.p == 0.0:
+            return x                                       # identity at eval
+        mask = torch.bernoulli(torch.full_like(x, 1.0 - self.p))
+        return x * mask / (1.0 - self.p)                  # inverted scaling
 
-        Args:
-            x: Input tensor for shape [B, C, H, W].
-
-        Returns:
-            Output tensor.
-        """
-        # TODO: implement dropout.
-        raise NotImplementedError("Implement CustomDropout.forward")
+    def extra_repr(self) -> str:
+        return f"p={self.p}"
