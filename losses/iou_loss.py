@@ -116,32 +116,32 @@ if __name__ == "__main__":
     # Test 1: Perfect overlap → loss = 0
     b = torch.tensor([[0.5, 0.5, 0.4, 0.4]])
     assert criterion(b, b).item() < 1e-5, "FAIL: perfect overlap"
-    print("✓ Perfect overlap → loss ≈ 0")
+    print("Perfect overlap → loss ≈ 0")
 
     # Test 2: No overlap → loss = 1
     pred = torch.tensor([[0.1, 0.1, 0.1, 0.1]])
     gt   = torch.tensor([[0.9, 0.9, 0.1, 0.1]])
     assert abs(criterion(pred, gt).item() - 1.0) < 1e-5, "FAIL: no overlap"
-    print("✓ No overlap → loss ≈ 1")
+    print("No overlap → loss ≈ 1")
 
     # Test 3: Partial overlap → loss in (0, 1)
     pred = torch.tensor([[0.5, 0.5, 0.4, 0.4]])
     gt   = torch.tensor([[0.6, 0.6, 0.4, 0.4]])
     loss = criterion(pred, gt).item()
     assert 0 < loss < 1, "FAIL: partial overlap"
-    print(f"✓ Partial overlap → loss = {loss:.4f}")
+    print(f"Partial overlap → loss = {loss:.4f}")
 
     # Test 4: Gradient flows
     pred = torch.tensor([[0.5, 0.5, 0.3, 0.3]], requires_grad=True)
     gt   = torch.tensor([[0.6, 0.6, 0.3, 0.3]])
     criterion(pred, gt).backward()
     assert pred.grad is not None, "FAIL: no gradient"
-    print(f"✓ Gradient flows → grad = {pred.grad}")
+    print(f"Gradient flows → grad = {pred.grad}")
 
     # Test 5: Zero-area box (no crash)
     pred = torch.tensor([[0.5, 0.5, 0.0, 0.0]])
     gt   = torch.tensor([[0.5, 0.5, 0.3, 0.3]])
     loss = criterion(pred, gt).item()
-    print(f"✓ Zero-area box → loss = {loss:.4f} (no crash)")
+    print(f"Zero-area box → loss = {loss:.4f} (no crash)")
 
     print("\nAll tests passed")

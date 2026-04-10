@@ -181,7 +181,6 @@ def log_activation_distribution(model, loader, device, epoch, step, n_batches=5)
     sample = np.random.choice(all_acts, size=min(10000, len(all_acts)), replace=False)
     table = wandb.Table(data=[[float(v)] for v in sample], columns=["activation"])
     
-    # FIXED: Added the `step` argument to synchronize with the global training steps
     wandb.log({
         "activations/3rd_conv_histogram": wandb.plot.histogram(
             table, "activation",
@@ -234,8 +233,6 @@ def train_epoch(model, loader, optimizer, criterion, scaler, device, epoch):
         all_labels.extend(labels.cpu().tolist())               
         n_batches  += 1
 
-
-        # FIXED: Per-batch loss now uses (epoch - 1) to maintain a correct 0-indexed count
         wandb.log({
             "train/batch_loss":      loss.item(),
             "train/batch_grad_norm": grad_norm,
@@ -458,10 +455,8 @@ def main():
         gap_f1_macro= train_metrics["f1_macro"] - val_metrics["f1_macro"]
 
 
-        # FIXED: Calculate the exact step at the end of the current epoch
         current_step = epoch * len(loaders["train"]) - 1
 
-        # FIXED: Added step=current_step to epoch summary metrics
         wandb.log({
             "epoch": epoch,
             "lr":    current_lr,
@@ -507,13 +502,11 @@ def main():
                 "val_f1_macro": val_metrics["f1_macro"],
                 "val_loss":     val_metrics["loss"],
             }, ckpt_path)
-            # FIXED: Added step=current_step
             wandb.log({"best_val_acc": best_val_acc, "best_epoch": epoch}, step=current_step)
 
 
         # Activation distribution logging (Sections 2.1 & 2.4)
         if epoch % args.log_activations_every == 0 or epoch == args.epochs:
-            # FIXED: Passed current_step into the function
             log_activation_distribution(
                 model, loaders["val"], device, epoch, step=current_step, n_batches=5)
 

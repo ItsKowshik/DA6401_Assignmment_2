@@ -27,7 +27,6 @@ def remap_state_dict(sd: dict) -> dict:
             new_sd[k] = v
             continue
 
-        # --- 3. Everything else (classifier head, unet decoder) — unchanged ---
         new_sd[k] = v
 
     return new_sd

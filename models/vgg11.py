@@ -124,6 +124,4 @@ class VGG11Encoder(nn.Module):
                         'block4': f4, 'block5': f5}
         return bn
 
-
-# ── Autograder alias: `from models.vgg11 import VGG11` ───────────────────────
 VGG11 = VGG11Encoder

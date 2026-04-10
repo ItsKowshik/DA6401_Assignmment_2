@@ -41,7 +41,7 @@ class DecoderBlock(nn.Module):
             kernel_size=2, stride=2
         )
 
-        # After concat with skip: (in_channels//2 + skip_channels) → out_channels
+        # After concat with skip: (in_channels//2 + skip_channels)  out_channels
         fused = in_channels // 2 + skip_channels
         self.conv = nn.Sequential(
             nn.Conv2d(fused, out_channels, kernel_size=3, padding=1, bias=False),
@@ -71,8 +71,8 @@ class VGG11Encoder(nn.Module):
     def __init__(self, backbone: nn.Module):
         super().__init__()
         # Mirror VGG11Classifier.encoder's named attributes exactly
-        # → state_dict keys stay encoder.block1.X, encoder.block2.X, etc.
-        # → matches checkpoint keys directly after _remap_vgg_state
+        # state_dict keys stay encoder.block1.X, encoder.block2.X, etc.
+        # matches checkpoint keys directly after _remap_vgg_state
         self.block1 = backbone.block1
         self.block2 = backbone.block2
         self.block3 = backbone.block3
@@ -249,7 +249,7 @@ if __name__ == "__main__":
 
         n_train = sum(p.numel() for p in model.parameters() if p.requires_grad)
         n_total = sum(p.numel() for p in model.parameters())
-        print(f"  Output : {out.shape} ✓")
+        print(f"  Output : {out.shape} ")
         print(f"  Params : {n_train:,} trainable / {n_total:,} total")
 
-    print("\nAll sanity checks passed ✅")
+    print("\nAll sanity checks passed ")

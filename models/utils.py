@@ -23,7 +23,6 @@ def _remap_vgg_state(sd: dict) -> dict:
             # else: unmapped index, drop it (strict=False handles it)
             continue
 
-        # --- EVERYTHING ELSE: classifier head, unet decoder — unchanged ---
         new_sd[k] = v
 
     return new_sd

@@ -83,7 +83,7 @@ class MultiTaskPerceptionModel(nn.Module):
 
         # ── Head 2: Localization (Task 2 regression head) ─────────────────────
         localizer = VGG11Localizer(
-            encoder_ckpt   = None,              # ← skip internal load; full ckpt covers it
+            encoder_ckpt   = None,              
             freeze_encoder = True,
         )
         loc_ckpt = torch.load(localizer_path, map_location="cpu")
@@ -102,19 +102,18 @@ class MultiTaskPerceptionModel(nn.Module):
                 for i in range(3):
                     model_linears[i].weight.copy_(loc_ckpt["state_dict"][weight_keys[i]])
                     model_linears[i].bias.copy_(loc_ckpt["state_dict"][bias_keys[i]])
-            print("  [✓] Successfully force-loaded trained regression head weights!")
+            print(" Successfully force-loaded trained regression head weights!")
         else:
-            print("  [!] Could not force-load head weights, sizes mismatch.")
+            print(" Could not force-load head weights, sizes mismatch.")
             print(f"      Found {len(weight_keys)} weights, {len(bias_keys)} biases, {len(model_linears)} model layers.")
 
         self.loc_encoder = localizer.encoder 
         
-        # FIXED: reg_head has the pool and flatten layers built-in now
         self.loc_head = localizer.reg_head
 
         # ── Head 3: Segmentation decoder (Task 3 U-Net decoder) ───────────────
         unet = VGG11UNet(
-            encoder_ckpt = None,               # ← skip internal load
+            encoder_ckpt = None,               
             num_classes  = seg_classes,
             freeze_mode  = "full",
         )
@@ -154,7 +153,6 @@ class MultiTaskPerceptionModel(nn.Module):
         # ── Head 2: Localization ──────────────────────────────────────────────
         loc_features = self.loc_encoder(x)
 
-        # FIXED: Pass features directly to loc_head (which handles pooling and flattening)
         normalized_coords = self.loc_head(loc_features)  # (B, 4) in [0, 1]
         
         # Scale to absolute image pixels [0, 224]
@@ -197,4 +195,4 @@ if __name__ == "__main__":
     print(f"✓ localization   : {loc_out.shape}")
     print(f"✓ segmentation   : {seg_out.shape}")
     print(f"✓ Total params   : {n_total:,}  |  Frozen: {n_frozen:,}")
-    print("\nAll sanity checks passed ✅")
+    print("\nAll sanity checks passed ")
