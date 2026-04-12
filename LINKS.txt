@@ -1,0 +1,4 @@
+Wandb Report Link:
+https://api.wandb.ai/links/k-indian-institute-of-technology-madras/8n0x53jy
+Github Link:
+https://github.com/ItsKowshik/DA6401_Assignmment_2
